@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/file.png</file>
+        <file>image/ff.png</file>
+        <file>image/fff.png</file>
+        <file>image/true.png</file>
+        <file>image/exit.png</file>
+        <file>image/pass.png</file>
+        <file>image/st.png</file>
+        <file>image/stt.png</file>
+        <file>image/start.png</file>
+        <file>image/spass.png</file>
+        <file>image/sspass.png</file>
+        <file>image/sttt.png</file>
+        <file>image/sspass1.png</file>
+        <file>image/sttt1.png</file>
+        <file>image/end.png</file>
+        <file>image/end1.png</file>
+        <file>image/end.svg</file>
+        <file>image/sspass.svg</file>
+        <file>image/sttt.svg</file>
+        <file>image/exit.svg</file>
+        <file>image/small.svg</file>
+    </qresource>
+</RCC>
