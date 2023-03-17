@@ -4,6 +4,10 @@
 #include<QTimer>
 #include<QColorDialog>
 #include<QClipboard>
+#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
+#pragma execution_character_set("utf-8")
+#endif
+
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
@@ -48,20 +52,7 @@ Widget::Widget(QWidget *parent)
     ui->comboBox_4->addItem(QString("普通"));
     //bar=new QMenuBar(this);//菜单栏创建函数,鼠标放在函数上发现返回值类型是QMenuBar*,所以应该初始化一个此类型的指针接受这个函数创建的菜单栏
     //现在创建了这个栏,要把她放在MainWindow窗口上；//记得声明QMenuBar这个类的头文件
-    //this-setMenuBar(bar);//现在把菜单栏放在了窗口上但是个空栏所以什么也没显示
-//    fileMenu=new QMenu(this);
 
-//    fileMenu->setWindowFlags(fileMenu->windowFlags() | Qt::FramelessWindowHint);
-
-//    //fileMenu->move(40,40);
-//    QAction*ac1=fileMenu->addAction("显卡1");
-//    QAction*ac2=fileMenu->addAction("显卡2");
-    //fileMenu=bar->addMenu("文件");//这个函数同样有返回值记得包含头文件、
-    //editMenu=bar->addMenu("编辑");
-    //ui->pushButton_4->setMenu(fileMenu);
-//    setWindowFlags(Qt::FramelessWindowHint);
-//    setAttribute(Qt::WA_TranslucentBackground);
-//    setStyleSheet("background:transparent;");
     QPixmap pix;
     pix.load(":/image/fff.png");
     pix=pix.scaled(60,40,Qt::KeepAspectRatio);
@@ -146,27 +137,7 @@ void Widget::paintEvent(QPaintEvent *event1){
 
     QPainter painter(this);
 
-         // 设置画刷颜色
-         //painter.setBrush(QColor(255, 160, 90));
 
-
-         //painter.drawRect(rect_left_x,rect_left_y, rect_right_x-rect_left_x,rect_right_y-rect_left_y);
-
-//         QPainter p(this);
-//             p.setCompositionMode( QPainter::CompositionMode_Clear );
-//             p.fillRect( 10, 10, 300, 300, Qt::SolidPattern );
-
-
-
-         // 必须要用QPlette调色板，才能使透明按照背景颜色生效
-         // 若不适用调色板则全黑, Qt::WA_TranslucentBackground会导致全黑
-         //painter.setCompositionMode( QPainter::CompositionMode_Clear );
-
-         //painter.fillRect( rect_left_x,rect_left_y, rect_right_x-rect_left_x,rect_right_y-rect_left_y, QColor(135, 220,125 ));
-         // 注意，若全屏，还是会有黑色底色，需要加一条代码
-
-
-         //QPen pen; //画笔。绘制图形边线，由颜色、宽度、线风格等参数组成
          // 反走样
           painter.setRenderHint(QPainter::Antialiasing, true);
           // 设置画笔颜色、宽度
@@ -181,13 +152,7 @@ void Widget::paintEvent(QPaintEvent *event1){
              //painter.drawRect(50,50,200,100);
          painter.drawRect(rect_left_x,rect_left_y, rect_right_x-rect_left_x,rect_right_y-rect_left_y);
 
-    /*
-        首先我们使用 setPen() 来设置画笔颜色（淡蓝色）、宽度（2 像素），用来设置矩形区域的边框。
-    然后使用setBrush() 来设置画刷颜色（橙色），用来填充矩形区域，
-    最后调用 drawRect() 来实现矩形的绘制，
-    其中参数依次顺序为 x、y、w、h，
-    是指区域从 x 为 50，y 为 50 的坐标点起，宽度为 160，高度为 100 的矩形。
-    */
+
 
 
 }
@@ -267,9 +232,7 @@ void Widget::on_pushButton_3_clicked()
 
     //this->showMinimized();//这个子窗口可以继续使用信号和槽机制，即使不把子窗口绑到当前窗口上
     st->show();
-    //this->hide();
 
-    //connect(this)
 }
 
 void Widget::on_pushButton_4_clicked()
@@ -278,18 +241,7 @@ void Widget::on_pushButton_4_clicked()
     fd->setFileMode(QFileDialog::Directory);
     //QUrl ur=fd->getSaveFileUrl(this,tr("选择文件保存路径"));
     filename=fd->getExistingDirectory(this,QString("选择文件保存路径"));
-    //QString fileName=fd->getOpenFileName(this,tr("选择文件保存路径"));
-//    QString fileName = QFileDialog::getOpenFileName(this,
-//                                                        tr("文件对话框！"),
-//                                                        "F:",
-//                                                        tr("图片文件(*png *jpg);;"
-//                                                           "本本文件(*txt)"));
-    //qDebug()<<"filename : "<<fileName;
-    //qDebug()<<"filename : "<<ur.toString();
-            //QString selectDir = QFileDialog::getExistingDirectory();
-//    QString fileName=ur.toString();
-//    fileName=QString(fileName.begin()+8);
-//    qDebug()<<"filename : "<<fileName;
+
 }
 
 

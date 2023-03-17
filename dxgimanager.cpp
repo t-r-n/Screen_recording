@@ -3,14 +3,13 @@
 #include<QCursor>
 Texture::~Texture()
 {
-    //qDebug()<<"父类析构函数被调用"<<endl;
-    //qDebug()<<"已经执行到"<<__LINE__<<endl;
+
     //上一回copyImage已经relase过了，所以m_texture不是空指针但不能再relase,copyimage 81行m_texture->relase以后令m_texture=nullptr问题解决
     if(m_texture!=nullptr){
         m_texture->Release();
         m_texture=nullptr;
     }
-    //qDebug()<<"已经执行到"<<__LINE__<<endl;
+
 }
 
 DxgiTextureStaging::DxgiTextureStaging(ID3D11Device *device, ID3D11DeviceContext *context)
@@ -21,26 +20,24 @@ DxgiTextureStaging::DxgiTextureStaging(ID3D11Device *device, ID3D11DeviceContext
 
 DxgiTextureStaging::~DxgiTextureStaging()
 {
-    //qDebug()<<"dxg析构函数调用"<<endl;
+
     m_device->Release();
     m_device=nullptr;
     m_context->Release();
     m_context=nullptr;
 }
-#define MOVE_TEST
-/*
-右值引用这个问题以我现在水平解决不了
-使用右值引用不会涨内存但是有黑边好像帧数也不够
-不适用就涨内存
-QPixmap貌似线程不安全，必须QPainter同步数据
-*/
+//#define MOVE_TEST
+//#define UNIQUEPTR
+
 QPixmap DxgiTextureStaging::copyToImage(IDXGIResource *res)
 {
+
     D3D11_TEXTURE2D_DESC desc;
     ID3D11Texture2D *textrueRes = nullptr;
     HRESULT hr = res->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&textrueRes));
+    //QPixmap pixmap;
 #ifdef MOVE_TEST
-    QPixmap pixmap;
+    std::shared_ptr<QPixmap> pixmap=std::make_shared<QPixmap>();
     //QPainter p(&pixmap);
 #endif
     if (FAILED(hr)) {
@@ -83,26 +80,30 @@ QPixmap DxgiTextureStaging::copyToImage(IDXGIResource *res)
 #endif
     }
 
-    // auto beforeTime = std::chrono::steady_clock::now();
+
 
     DXGI_MAPPED_RECT map;
     surface->Map(&map, DXGI_MAP_READ);     //耗时大头在这  十几毫秒
 
 
-//     auto afterTime = std::chrono::steady_clock::now();
-//     double duration_millsecond = std::chrono::duration<double, std::milli>(afterTime - beforeTime).count();
-//         qDebug() <<"copyimage所需时间"<< duration_millsecond << "毫秒" << endl;
+
 
 
 
 #ifdef MOVE_TEST
-    pixmap = QPixmap::fromImage(QImage(static_cast<uchar *>(map.pBits),                //这一步需要1ms-2ms
+    auto pix = QPixmap::fromImage(QImage(static_cast<uchar *>(map.pBits),                //这一步需要1ms-2ms
                                        int(desc.Width), int(desc.Height), QImage::Format_ARGB32));
+    pixmap->swap(pix);
+    //pixmap->swap(QPixmap::fromImage(QImage(static_cast<uchar *>(map.pBits),int(desc.Width), int(desc.Height), QImage::Format_ARGB32)));
     //pixmap.save(QString("D:/firecv/%1.jpg").arg(curPix++),"JPG");
 #else
+         auto beforeTime = std::chrono::steady_clock::now();
     //QPixmap pixmap;
-    QPixmap pixmap = std::move(QPixmap::fromImage(QImage(static_cast<uchar *>(map.pBits),                //这一步需要1ms-2ms
-                                       int(desc.Width), int(desc.Height), QImage::Format_ARGB32)));
+    //QPixmap::fromImage(QImage(static_cast<uchar *>(map.pBits),int(desc.Width), int(desc.Height), QImage::Format_ARGB32)).swap(pixmap)
+            QPixmap pixmap=QPixmap::fromImage(QImage(static_cast<uchar *>(map.pBits),int(desc.Width), int(desc.Height), QImage::Format_ARGB32));
+         auto afterTime = std::chrono::steady_clock::now();
+         double duration_millsecond = std::chrono::duration<double, std::milli>(afterTime - beforeTime).count();
+             qDebug() <<"copyimage所需时间"<< duration_millsecond << "毫秒" << endl;
 #endif
 
 
@@ -477,11 +478,11 @@ QString DxgiManager::lastError() const
 void DxgiManager::clearLastError(){
     m_lastError.clear();
 }
-QImage DxgiManager::grabScreen()
+QPixmap DxgiManager::grabScreen()
 {
     IDXGIResource *desktopRes;
     DXGI_OUTDUPL_FRAME_INFO frameInfo;
-    QImage im;
+    QPixmap im;
     while (true) {//这样相当于不补帧//必须等下层接口更新才返回
 
         HRESULT hr = m_duplication->AcquireNextFrame(30, &frameInfo, &desktopRes);
@@ -511,14 +512,15 @@ QImage DxgiManager::grabScreen()
 
 
 
-    QPixmap mp=std::move(m_texture->copyToImage(desktopRes));//先保存资源再释放帧，否则保存下来的是黑屏数据  //这一步占总时间一半
-    im=std::move(mp.toImage());
+    QPixmap mp;
+    mp=m_texture->copyToImage(desktopRes);//先保存资源再释放帧，否则保存下来的是黑屏数据  //这一步占总时间一半
+    //im=std::move(mp->toImage());
     //static int curPix=0;
     //mp.save(QString("D:/firecv/%1.jpg").arg(curPix++),"JPG");
     //im.save(QString("D:/firecv/%1.jpg").arg(curPix++),"JPG");
     m_duplication->ReleaseFrame();
     //return m_texture->copyToImage(desktopRes);
-    return im;
+    return mp;
     //return mp.toImage();
 #if 0
     //创建绘画对象

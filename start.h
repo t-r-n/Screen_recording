@@ -25,7 +25,7 @@
 #include <QMouseEvent>
 #include"startpushbutton.h"
 #include"audio.h"
-#include"audiorecoder.h"
+//#include"audiorecoder.h"
 #include<QAudioDeviceInfo>
 #include<QAudio>
 #include<stdio.h>
@@ -40,6 +40,7 @@
 #include<fstream>
 #include<inttypes.h>
 #include <functional>
+#include<future>
 /*
 *该项目到此暂停，先学习ffmpegh264编码的东西
 * 现在是线程池中每次只有一个线程在运行
@@ -84,9 +85,9 @@ public:
     void timerEvent(QTimerEvent *e);
     ~start();
     QScreen *screen = QGuiApplication::primaryScreen();
-    void threadpix(std::shared_ptr<std::vector<QImage>>buffer,unsigned int id);
+    void threadpix(std::shared_ptr<std::vector<QPixmap>>buffer,unsigned int id);
     //void threadpix(std::shared_ptr<std::vector<QImage>>buffer,unsigned int index);
-    void threadPKT(std::shared_ptr<std::vector<QPixmap>>buffer,unsigned int id);
+    //void threadPKT(std::shared_ptr<std::vector<QPixmap>>buffer,unsigned int id);
     void threadSave(std::shared_ptr<std::vector<std::vector<std::string>>>ve,unsigned int id);
     //void threadpix1();
     //void thread_avi();
@@ -97,6 +98,7 @@ public:
     ilovers::TaskExecutor executor{ 1};
     ilovers::TaskExecutor executor1{ 4};
     //int selectAdapt=0;//设置要选择的显卡号
+    void sleepFunc(int times);
     void mousePressEvent(QMouseEvent *ev);
     void mouseMoveEvent(QMouseEvent *ev);
     void paintEvent(QPaintEvent*pe);
@@ -122,12 +124,13 @@ private slots:
 
 
 private:
+    std::atomic<int> sleepTimes={60};//ms
     std::ifstream infile;
     std::ofstream outfile;
     std::mutex mu_file;
     //QPixmap grabWindow(HWND winId, int x, int y, int w, int h);//抓取一张图片
     //ToVideo tv=ToVideo("ou.mp4","h264");
-    StartPushButton*stButton;
+    //StartPushButton*stButton;
     Parameter pa;
     std::shared_ptr<ToVideo> tv;
     int index=0;
@@ -135,6 +138,7 @@ private:
     int timerid1;
     int timerid2;
     int timerid3;
+    int timerid4;
     bool is=true;
     bool isCapAudio=false;
     bool first=true;
@@ -166,7 +170,7 @@ private:
 
     bool iscontinue=true;
 
-    AudioRecoder *are;
+    //AudioRecoder *are;
     int audio=0;
 
     std::shared_ptr<Audio>au;

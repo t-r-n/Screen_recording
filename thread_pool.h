@@ -84,6 +84,7 @@ int main()
 #include <vector>
 #include <queue>
 #include <QImage>
+
 // 命名空间
 namespace ilovers {
     class TaskExecutor;
@@ -114,6 +115,8 @@ public:
         }
     }
     void joinall() {//
+        //shutdown();
+
         while (true) {
             std::unique_lock<std::mutex>ll( m_task,std::defer_lock );
             if (ll.try_lock()) {
@@ -150,6 +153,8 @@ public:
         if (stop.load()) {    // stop == true ??
             throw std::runtime_error("task executor have closed commit.");
         }
+        //auto autoptr = std::mem_fn(f);
+
         using ResType = decltype(f(args...));    // typename std::result_of<F(Args...)>::type, 函数 f 的返回值类型
         auto task = std::make_shared<std::packaged_task<ResType()>>(//还有一个作用把任何形式的函数都包装成了一个无返回值无参数的函数，便于统一返回std::function<void()>
             std::bind(std::forward<F>(f), std::forward<Args>(args)...)//注意和bind的结合使用
@@ -166,7 +171,16 @@ public:
         std::future<ResType> future = task->get_future();//异步的等待packaged_task包装过的task的返回值
         return future;
     }
-
+//    template<typename xClass, typename xReturn, typename...xParam>//用这个就可以特化成员函数版本了
+//    auto commit(xReturn(xClass::* pfn)(xParam...), xClass* pThis, xParam...lp) {
+////        auto autoptr = std::mem_fn(&start::threadpix);
+////        return commit(std::bind(std::forward<xClass>(pfn), std::forward<xClass>(pThis)),std::forward<xParam>(lp)...);
+////        return commit(std::bind(std::forward<xClass>(pfn), std::forward<xClass>(pThis)),std::forward<xParam>(lp)...);
+//    }
+//    template <class _Fn, class... _Args, std::enable_if_t<!std::is_same_v<std::_Remove_cvref_t<_Fn>, TaskExecutor>, int> = 0>
+//    _NODISCARD_CTOR explicit TaskExecutor(_Fn&& _Fx, _Args&&... _Ax) {
+//        commit(std::forward<_Fn>(_Fx), std::forward<_Args>(_Ax)...);
+//    }
 //    template<typename xClass, typename xReturn, typename...xParam>//用这个就可以特化成员函数版本了
 //    auto commit( xReturn(xClass::* pfn)(xParam...), xClass* pThis, xParam...lp) {
 //        //std::bind(std::forward<F>(f), std::forward<Args>(args)...)//注意和bind的结合使用

@@ -18,26 +18,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #
 SOURCES += \
     audio.cpp \
-    audioin.cpp \
-    audiorecoder.cpp \
     dxgimanager.cpp \
     main.cpp \
     pcm_to_aac.cpp \
     start.cpp \
-    startpushbutton.cpp \
     stlabel.cpp \
     tovideo.cpp \
     widget.cpp
 
 HEADERS += \
     audio.h \
-    audioin.h \
-    audiorecoder.h \
     dxgimanager.h \
     mix.h \
     pcm_to_aac.h \
     start.h \
-    startpushbutton.h \
     stlabel.h \
     thread_pool.h \
     tovideo.h \
@@ -129,4 +123,48 @@ RESOURCES += \
 
 
 
+#INCLUDEPATH += $$PWD/libyuv/include
+#DEPENDPATH += $$PWD/libyuv/include
 
+#INCLUDEPATH += $$PWD/libyuv/source
+#DEPENDPATH += $$PWD/libyuv/source
+
+#SOURCES += \
+#    libyuv/source/convert.cc
+
+#HEADERS+=\
+#    libyuv/convert.h\
+#    libyuv/basic_types.h\
+#    libyuv/cpu_id.h\
+#    libyuv/planar_functions.h\
+#    libyuv/rotate.h\
+#    libyuv/row.h\
+#    libyuv/scale.h\
+#    libyuv/scale_row.h\
+#    libyuv/scale_uv.h
+
+#win32{
+#    LIBS += -lws2_32
+#    LIBS += -lUserEnv
+#    LIBS += -lIPHLPAPI
+#    LIBS += -lPsapi
+#    LIBS += -ladvapi32
+#    LIBS += -lUser32
+#    LIBS += -lGdi32
+#}
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/./ -lyuv
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/./ -lyuvd
+#else:unix: LIBS += -L$$PWD/./ -lyuv
+
+INCLUDEPATH += $$PWD/.
+DEPENDPATH += $$PWD/.
+INCLUDEPATH += $$PWD/include
+DEPENDPATH += $$PWD/include
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/libyuv/release/ -lyuv
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/libyuv/debug/ -lyuv
+else:unix: LIBS += -L$$PWD/libyuv/ -lyuv
+
+INCLUDEPATH += $$PWD/libyuv/include
+DEPENDPATH += $$PWD/libyuv/include

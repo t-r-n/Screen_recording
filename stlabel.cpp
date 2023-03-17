@@ -81,6 +81,3 @@ void stlabel::changeSize(float orz,float bi){
     bisize=bi;
     InitSvgWidget(pixpath,orsize,0);//重画空间
 }
-//void setPix(QString st,QString en){
-//    //pix.load
-//}

@@ -19,7 +19,7 @@ class pcm_to_aac {
 public:
     pcm_to_aac(wchar_t* input, std::string output, int samplerate = 44100, int channels = 2);
 	void start();
-
+    static int pcmToAac(char*input,char*output);
 	~pcm_to_aac();
 private:
 	//ÅäÖÃ±àÂëÆ÷ÉÏÏÂÎÄ

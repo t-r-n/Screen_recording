@@ -29,10 +29,11 @@ extern "C"
 #include <libswscale/swscale.h>
 //#include
 //#ifdef __cplusplus
+
 };
 //#endif
-
-
+#include <libyuv.h>
+//#include "libyuv/convert.h"
 class ToVideo
 {
 private:
@@ -54,7 +55,7 @@ public:
                        FILE *outfile,std::vector<std::vector<std::string>>&ve);
     void setFrames(int fps);
     void flushEncode();
-    void sendFrame(const QImage &pix,std::vector<std::vector<std::string>>&ve);
+    void sendFrame(const QPixmap &pix,std::vector<std::vector<std::string>>&ve);
     void writeFile(std::shared_ptr<std::vector<std::vector<std::string>>>ve);
     ~ToVideo();
     int gx,gy,gw,gh;

@@ -1,167 +1,19 @@
-#include"pcm_to_aac.h"
-#include<QDebug>
+ï»¿#pragma once
+#ifndef PCM2AAC_H
+#define PCM2AAC_H
 
 
-pcm_to_aac::pcm_to_aac(wchar_t* input, std::string output, int samplerate,int channels)
-	:inputfile(input),
-	outputfile(output.c_str()),
-	samplerate_(samplerate),
-	channels_(channels)
-{
-	//av_register_all();
-	//avcodec_register_all();
-
-	int ret = 0;
-	//const char* inputfile = input;
-	//const char* outputfile = output.c_str();
-#ifdef TRDEBUG
-    qDebug()<<"error on"<<__LINE__<<endl;
-#endif
-	const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
-	if (!codec) {
-		std::cout << "avcode_find_encoder failed" << std::endl;
-		return;
-	}
-
-	//ÅäÖÃ±àÂëÆ÷ÉÏÏÂÎÄ
-	ac = avcodec_alloc_context3(codec);
-	if (!ac) {
-		std::cout << "avcodec_alloc_context3 failed" << std::endl;
-		return;
-	}
-	ac->sample_rate = samplerate_;//²ÉÑùÂÊ //Ã¿ÃëÖÓµÄ²ÉÑùÊı£¨ÒôÆµÊÇÃ¿ÃëÖÓ²É¼¯ÁË¶àÉÙµçĞÅºÅ£©
-	ac->channels = 2;//ÉùµÀÊı
-	ac->sample_fmt = AV_SAMPLE_FMT_FLTP;//²ÉÑùÔÚÄÚ´æÖĞ´æ´¢¸ñÊ½fltpÊÇ¸¡µãĞÍÕ¼ËÄ×Ö½Ú£¬¼´²ÉÒ»¸öÑùĞèÒªËÄ×Ö½Ú´æ´¢
-	ac->channel_layout = AV_CH_LAYOUT_STEREO;
-	ac->bit_rate = 64000;//µ¥Î»Ê±¼äÄÚ´«ËÍ±ÈÌØµÄÊıÄ¿
-	ac->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	//´ò¿ªÒôÆµ±à½âÂëÆ÷
-	ret = avcodec_open2(ac, codec, NULL);
-	if (ret < 0) {
-
-		std::cout << "avcodec_open2 failed" << std::endl;
-		return;
-	}
-
-	//´´½¨Ò»¸öÊä³öµÄÉÏÏÂÎÄ£¨ÅäÖÃÊä³ö¸ñÊ½£©
-	oc = NULL;
-	avformat_alloc_output_context2(&oc, NULL, NULL, outputfile);
-	if (!oc) {
-		std::cout << "avformat_alloc_output_context3_failed" << std::endl;
-		return;
-	}
-	AVStream* st = avformat_new_stream(oc, NULL);//ÒôÆµÊÓÆµ×ÖÄ»¶¼ÊÇÁ÷µÄĞÎÊ½£¬ÒôÆµÏÂ±êÍ¨³£ÊÇ0
-	st->codecpar->codec_tag = 0;
-	avcodec_parameters_from_context(st->codecpar, ac);
-	av_dump_format(oc, 0, outputfile, 1);//°ÑÅäÖÃĞÅÏ¢´òÓ¡Ò»ÏÂ
 
 
-	ret = avio_open(&oc->pb, outputfile, AVIO_FLAG_WRITE);//ÒÑĞ´ÈëµÄ·½Ê½´ò¿ªÎÄ¼ş
-	if (ret < 0) {
-		std::cout << "avio_open failed" << std::endl;
-		return;
-	}
+#include <iostream>
+#include <cstring>
 
+extern "C" {
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 }
 
-void pcm_to_aac::start() {
-	/////ÒÔÉÏµÄÅäÖÃ¹¤×÷×¼±¸Íê±Ï
-	int ret = 0;
-	avformat_write_header(oc, NULL);
-
-	SwrContext* ctx = NULL;//ÉèÖÃÖØ²ÉÑù¶ÔÊäÈëÒôÆµµÄ²ÎÊıºÍÊä³öÒôÆµµÄ²ÎÊı½øĞĞµ¼Èë
-	ctx = swr_alloc_set_opts(ctx, ac->channel_layout, ac->sample_fmt, ac->sample_rate, //Êä³öµÄÒôÆµ²ÎÊı
-		AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, samplerate_, //ÊäÈëµÄÒôÆµ²ÎÊı
-		0, 0
-	);
-	if (!ctx) {
-		std::cout << "swr_alloc_set_opts failed" << std::endl;
-		return;
-	}
-	ret = swr_init(ctx);
-	if (ret < 0) {
-		std::cout << "swr_init failed" << std::endl;
-		return;
-	}
-
-#ifdef TRDEBUG
-    qDebug()<<"error on"<<__LINE__<<endl;
-#endif
-	AVFrame* frame = av_frame_alloc();
-	frame->format = AV_SAMPLE_FMT_FLTP;
-	frame->channels = 2;
-	frame->channel_layout = AV_CH_LAYOUT_STEREO;
-	frame->nb_samples = 1024; //Ò»Ö¡ÒôÆµµÄÑù±¾ÊıÁ¿
-	ret = av_frame_get_buffer(frame, 0);
-	if (ret < 0) {
-		std::cout << "av_frame_get_buffer failed" << std::endl;
-		return;
-	}
-#ifdef TRDEBUG
-    qDebug()<<"error on"<<__LINE__<<endl;
-#endif
-	int readsize = frame->nb_samples * 2 * 2;//s16¸ñÊ½Á½¸ö×Ö½Ú*Ñù±¾ÊıÁ¿*2¸öÍ¨µÀ¾ÍÊÇÒ»Ö¡Ñù±¾Õ¼µÄ×ÜÄÚ´æ
-	char* pcms = new char[readsize];
-	//´ò¿ªÊäÈëµÄÎÄ¼ş
-    //std::ifstream infile(inputfile, std::ios::in | std::ios::binary);
-    FILE*fi=_wfopen(inputfile,L"rb");
-    if (!fi) {
-        std::cout << "start error" << std::endl;
-	}
-	std::cout << __LINE__ << std::endl;
-	for (;;) {
-        int len = fread(pcms,1, readsize,fi);
-		if (len <= 0) {
-			std::cout << __LINE__ << len << std::endl;
-			break;
-		}
-        //std::cout << __LINE__ << len << std::endl;
-		const uint8_t* data[1];//ÖØ²ÉÑùÖ®Ç°µÄÊı¾İ
-		data[0] = (uint8_t*)pcms;
-		len = swr_convert(ctx, frame->data, frame->nb_samples,//ÖØ²ÉÑùÖ®ºóµÄÊı¾İ
-			data, frame->nb_samples /*ÒôÆµÑù±¾ÊıÁ¿*/ //ÖØ²ÉÑùÖ®Ç°µÄÊı¾İ
-		);
-        //std::cout << __LINE__ << len << std::endl;
-		if (len <= 0) {
-			break;
-		}
-#ifndef TRDEBUG
-    qDebug()<<"error on"<<__LINE__<<endl;
-#endif
-		//½«ÖØ²ÉÑùÖ®ºóµÄÊı¾İ·¢ËÍµ½±àÂëÏß³Ì
-		ret = avcodec_send_frame(ac, frame);
-		if (ret != 0) {
-			continue;
-		}
-		AVPacket pkt;
-		av_init_packet(&pkt);
-		ret = avcodec_receive_packet(ac, &pkt);//½ÓÊÕ±àÂëºóµÄÊı¾İ
-		if (ret != 0) {
-			continue;
-		}
-		pkt.stream_index = 0;
-		pkt.dts = 0;
-		pkt.pts = 0;
-		av_interleaved_write_frame(oc, &pkt);
-
-	}
-	std::cout << "ÒÑ½áÊø" << std::endl;
-
-	delete[] pcms;
-	pcms = NULL;
-	//Ğ´ÈëÊÓÆµµÄË÷Òı
-	av_write_trailer(oc);
-}
-pcm_to_aac::~pcm_to_aac() {
-	//¹Ø±Õ´ò¿ªÎÄ¼şµÄioÁ÷
-	avio_close(oc->pb);
-	//¹Ø±Õ±àÂëÆ÷
-	avcodec_close(ac);
-	avcodec_free_context(&ac);//¹Ø±Õ±àÂëÆ÷£¬ÇåÀí±àÂëÆ÷ÅäÖÃ²ÎÊı
-
-}
-int pcm_to_aac::pcmToAac(char*input,char*output) {
+int pcmToAac(char*input,char*output) {
 //    if (argc != 3) {
 //        std::cerr << "Usage: " << argv[0] << " <input file> <output file>" << std::endl;
 //        return 1;
@@ -335,3 +187,8 @@ int pcm_to_aac::pcmToAac(char*input,char*output) {
     return 0;
 
 }
+
+
+
+
+#endif // PCM2AAC_H

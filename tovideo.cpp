@@ -1,5 +1,7 @@
 ﻿#include "tovideo.h"
-
+#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
+#pragma execution_character_set("utf-8")
+#endif
 
 ToVideo::ToVideo(std::wstring file_name,std::string codecname,int wid,int hei,int fps,float bitrate)
 {
@@ -33,8 +35,8 @@ ToVideo::ToVideo(std::wstring file_name,std::string codecname,int wid,int hei,in
     c->width = wid;
     c->height = hei;
     /* frames per second */
-    c->time_base = (AVRational){1, fps};
-    c->framerate = (AVRational){fps, 1};
+    c->time_base = {1, fps};
+    c->framerate = {fps, 1};
 
     /* emit one intra frame every ten frames
      * check frame pict_type before passing frame
@@ -78,7 +80,7 @@ ToVideo::ToVideo(std::wstring file_name,std::string codecname,int wid,int hei,in
         exit(1);
     }
 }
-void ToVideo::sendFrame(const QImage &image,std::vector<std::vector<std::string>>&ve){
+void ToVideo::sendFrame(const QPixmap &pix,std::vector<std::vector<std::string>>&ve){
     ret = av_frame_make_writable(frame);
     if (ret < 0)
         exit(1);
@@ -93,20 +95,30 @@ void ToVideo::sendFrame(const QImage &image,std::vector<std::vector<std::string>
         }
         qDebug()<<"Qimage错误"<<endl;
     }
+
 #endif
-    if(image.isNull()){
+
+    if(pix.isNull()){
         qDebug()<<__LINE__<<"QPix错误"<<endl;
     }
-    //QImage image=pix.toImage();
-//    if(image.isNull()){
-//        if(image.isNull()){
-//            qDebug()<<"QPix错误"<<endl;
-//        }
-//        qDebug()<<"Qimage错误"<<endl;
-//    }
+
+    QImage image=pix.toImage();
+
+    if(image.isNull()){
+
+        if(image.isNull()){
+
+            qDebug()<<"QPix错误"<<endl;
+
+        }
+
+        qDebug()<<"Qimage错误"<<endl;
+
+    }
     int cc=0;
     //image.bits();
-#if 1
+#if 0  //一帧20ms左右
+    auto beforeTime = std::chrono::steady_clock::now();
     for (int h = 0; h < c->height; h++)
     {
 
@@ -171,13 +183,16 @@ void ToVideo::sendFrame(const QImage &image,std::vector<std::vector<std::string>
 //            cv.wait_for(lck,std::chrono::microseconds(500));
         }
         //std::this_thread::yield();
-                    if(++cc==10){//把一帧的压缩控制在一秒左右
-                        cc=0;
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                    }
+//                    if(++cc==40){//把一帧的压缩控制在一秒左右
+//                        cc=0;
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+//                    }
 
         //std::this_thread::yield();
     }
+    auto afterTime = std::chrono::steady_clock::now();
+    double duration_millsecond = std::chrono::duration<double, std::milli>(afterTime - beforeTime).count();
+        qDebug() <<"transfer time"<< duration_millsecond << "毫秒" << endl;
 #endif
 #if 0
     //2 创建视频重采样上下文：指定源和目标图像分辨率、格式
@@ -201,6 +216,52 @@ void ToVideo::sendFrame(const QImage &image,std::vector<std::vector<std::string>
         qDebug()<<"转换失败"<<endl;
         return;
     }
+#endif
+#if 0
+    //2 创建视频重采样上下文：指定源和目标图像分辨率、格式
+    //qDebug()<<"图片格式"<<image.format()<<endl;
+        SwsContext *swsCtx = NULL;
+        swsCtx = sws_getCachedContext(swsCtx,
+            c->width, c->height, AV_PIX_FMT_RGB32,
+            c->width, c->height, AV_PIX_FMT_YUV420P,
+            SWS_BICUBIC,
+            NULL, NULL, NULL
+            );
+
+//    LIBYUV_API int ARGBToI420(const uint8* src_argb, int src_stride_argb,
+//                   uint8* dst_y, int dst_stride_y,
+//                   uint8* dst_u, int dst_stride_u,
+//                   uint8* dst_v, int dst_stride_v,
+//                   int width, int height)
+    AVFrame *rgbFrame = av_frame_alloc();
+     libyuv::ARGBToI420(rgbData,c->width*4,
+                rgbFrame->data[0],rgbFrame->linesize[0],
+                rgbFrame->data[1],rgbFrame->linesize[1],
+                rgbFrame->data[2],rgbFrame->linesize[2],
+                c->width, c->height);
+    //5 创建RGB视频帧并绑定RGB缓冲区（avpicture_fill是给rgbFrame初始化一些字段，并且会自动填充data和linesize）
+
+    av_image_fill_arrays(rgbFrame->data,rgbFrame->linesize,rgbData,AV_PIX_FMT_RGB32,c->width, c->height,1);
+    //av_image_fill_arrays(rgbFrame,rgbData, AV_PIX_FMT_RGB24, c->width, c->height);
+    //6 像素格式转换，转换后的YUV数据存放在yuvFrame
+    int outSliceH = sws_scale(swsCtx, rgbFrame->data, rgbFrame->linesize, 0, c->height,
+        frame->data, frame->linesize);
+    if (outSliceH <= 0){
+        qDebug()<<"转换失败"<<endl;
+        return;
+    }
+#endif
+#if 1  //一帧6-8ms
+    auto beforeTime = std::chrono::steady_clock::now();
+    auto rgbData=image.bits();
+    libyuv::ARGBToI420(rgbData,c->width*4,
+               frame->data[0],frame->linesize[0],
+               frame->data[1],frame->linesize[1],
+               frame->data[2],frame->linesize[2],
+               c->width, c->height);
+    auto afterTime = std::chrono::steady_clock::now();
+    double duration_millsecond = std::chrono::duration<double, std::milli>(afterTime - beforeTime).count();
+        qDebug() <<"transfer time"<< duration_millsecond << "毫秒" << endl;
 #endif
     frame->pts++;//设置时间戳保证每一帧图片的顺序
     encode(c, frame, pkt, f,ve);
@@ -254,8 +315,8 @@ void ToVideo::writeFile(std::shared_ptr<std::vector<std::vector<std::string>>>ve
     }
 }
 void ToVideo::setFrames(int fps){
-    c->time_base = (AVRational){1, fps};
-    c->framerate = (AVRational){fps, 1};
+    c->time_base = {1, fps};
+    c->framerate = {fps, 1};
 }
 
 ToVideo::~ToVideo(){

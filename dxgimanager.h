@@ -13,11 +13,13 @@
 #endif
 #include<QBitmap>
 #include<QBuffer>
+#include<memory>
 class Texture
 {
 public:
     virtual ~Texture();
-    virtual QPixmap copyToImage(IDXGIResource *res) = 0;
+    //virtual QPixmap copyToImage(IDXGIResource *res) = 0;
+    virtual QPixmap  copyToImage(IDXGIResource *res)=0;
     //virtual HRESULT DrawCursor2(D3D11_MAPPED_SUBRESOURCE mapdesc, D3D11_TEXTURE2D_DESC desc, DXGI_OUTDUPL_FRAME_INFO frameInfo);
 protected:
     ID3D11Texture2D *m_texture = nullptr;
@@ -29,7 +31,8 @@ public:
     DxgiTextureStaging(ID3D11Device *device, ID3D11DeviceContext *context);
     ~DxgiTextureStaging();
 
-    QPixmap copyToImage(IDXGIResource *res);
+    //QPixmap copyToImage(IDXGIResource *res);
+    QPixmap  copyToImage(IDXGIResource *res);
     QPixmap preCursor;//保存前一帧图像
     //QPixmap DrawCursor2(D3D11_MAPPED_SUBRESOURCE mapdesc, D3D11_TEXTURE2D_DESC desc, DXGI_OUTDUPL_FRAME_INFO frameInfo);
 public:
@@ -47,7 +50,7 @@ public:
     bool init(int selectAdapt);
     QString lastError() const;
     void clearLastError();
-    QImage grabScreen();
+    QPixmap grabScreen();
     static std::vector<QString> selectAdapt();//选择录制显卡
     static void Wchar_tToString(std::string& szDst, wchar_t*wchar);
     void reDuplication();
