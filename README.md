@@ -4,8 +4,11 @@ qt+ffmpeg实现的录屏软件
 qt5.14.2 
 # 实现功能
 截屏/录屏
-# 使用库
+# 流程
 截屏使用dxgi(windows下速度快)
-编码成h264使用ffmpeg+libyuv
+图像使用ffmpeg+libyuv编码成h264格式
+音频编码成aac
+最后封装成mp4
+
 
 
